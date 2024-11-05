@@ -1,3 +1,5 @@
 mip
 numpy
 mypy
+networkx
+redis
