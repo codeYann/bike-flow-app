@@ -38,14 +38,25 @@ func main() {
 		return
 	}
 
-	// Receive response from the server
+	// Use a loop to read the complete response
+	response := make([]byte, 0)
 	buffer := make([]byte, 1024)
-	n, err := conn.Read(buffer)
-	if err != nil {
-		fmt.Println("Error reading response:", err)
-		return
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			fmt.Println("Error reading response:", err)
+			return
+		}
+		response = append(response, buffer[:n]...)
+		if n < 1024 {
+			break
+		}
 	}
 
 	// Print the server response
-	fmt.Println("Server response:", string(buffer[:n]))
+	fmt.Println("Server response:", string(response))
 }
+
