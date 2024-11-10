@@ -2,4 +2,4 @@ mip
 numpy
 mypy
 networkx
-redis
+pandas
