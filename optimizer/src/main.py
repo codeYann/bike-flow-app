@@ -4,6 +4,7 @@ import socket
 import logging
 import mip  # type: ignore
 import numpy as np
+import pandas as pd
 from model.heuristics import closest_neighbor
 from model.cut_callbacks import UserCutCallbacks
 from typing import Dict, Tuple, List, Set
@@ -24,6 +25,25 @@ def read_json_file(data_path: str, filename: str) -> dict:
         raise
     except json.JSONDecodeError as e:
         logging.error(f"Error decoding JSON from file {filename}: {e}")
+        raise
+
+
+def read_csv_file(data_path: str, filename: str) -> dict:
+    """Reads a CSV file from the data directory."""
+    csv_file = f"{filename}.csv"
+    file_path = os.path.join(data_path, csv_file)
+    try:
+        df = pd.read_csv(file_path)
+        print(df)
+        response = {
+            "stations": df["station"].to_list(),
+            "coordinates": df[["latitude", "longitude"]].apply(tuple, axis=1).tolist(),
+            "availableBikes": df["available_bikes"].to_list(),
+            "freeSlots": df["free_slots"].to_list(),
+        }
+        return response
+    except FileNotFoundError:
+        logging.error(f"File {filename} not found in data directory.")
         raise
 
 
@@ -108,6 +128,8 @@ def handle_client(socket_client: socket.socket, data_path: str):
 
         try:
             instance_json = read_json_file(data_path, instance_key)
+            instance_csv_json = read_csv_file(data_path, instance_key)
+
             model, x, f = setup_model(instance_json)
 
             V = set(range(instance_json["num_vertices"]))
@@ -129,8 +151,9 @@ def handle_client(socket_client: socket.socket, data_path: str):
                     if x[origin, destination].x == 1 and f[origin, destination]
                 ]
 
-                data = {"routes": route}
+                data = {"routes": route} | instance_csv_json
                 json_response = json.dumps(data)
+                print(json_response)
                 socket_client.send(json_response.encode("utf-8"))
 
         except FileNotFoundError:
