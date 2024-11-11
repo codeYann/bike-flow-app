@@ -4,7 +4,7 @@ import socket
 import logging
 import mip  # type: ignore
 import numpy as np
-import pandas as pd
+import pandas as pd  # type: ignore
 from model.heuristics import closest_neighbor
 from model.cut_callbacks import UserCutCallbacks
 from typing import Dict, Tuple, List, Set
@@ -119,7 +119,7 @@ def setup_model(
     return model, x, f
 
 
-def handle_client(socket_client: socket.socket, data_path: str):
+def handle_client(socket_client: socket.socket, data_path: str, max_seconds=300):
     """Handles communication with a connected client."""
     try:
         instance_key = socket_client.recv(1024).decode("utf-8").strip()
@@ -141,7 +141,7 @@ def handle_client(socket_client: socket.socket, data_path: str):
             initial_solution = generate_initial_solution(V, q, np.matrix(c), Q, x)
             model.start = initial_solution
             model.cuts_generator = UserCutCallbacks(V, A, q, Q, x)
-            model.optimize(max_seconds=300)
+            model.optimize(max_seconds=max_seconds)
 
             if model.num_solutions:
                 route = [
